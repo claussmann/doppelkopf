@@ -27,3 +27,10 @@ def join_new_player(name:str) -> Player:
         raise HTTPException(status_code=400, detail="There are already 4 players in the game.")
     except NameException:
         raise HTTPException(status_code=400, detail="The name is invalid. Names must be unique and between 3 and 20 chars.")
+
+@doppelkopf_app.post("/get_player")
+def get_player(token:str) -> Player:
+    try:
+        return doppelkopf_app.game.get_player(token)
+    except PlayerNotExistingException:
+        raise HTTPException(status_code=400, detail="The player doesn't exist.")

@@ -40,3 +40,23 @@ class Player(BaseModel):
     hand: List[Card] = list()
     name: str = Field(max_length=20, min_length=3, default="Anonymous")
     token: str = ""
+	solo: bool = False
+	sequence_index = 0
+	runden_punkte = 0
+	sieg_punkte = 0
+
+
+class Vorbehalt(Enum):
+	# < 10 are games which keep 2 teams
+	GESUND = 0
+	HOCHZEIT = 1
+	ARMUT = 2
+
+	# >= 10 are solos
+	SOLO = 10
+	FLEISCHLOSER = 11
+	BUBENSOLO = 12
+	DAMENSOLO = 13
+
+	# >= 30 will always pass
+	SCHMEISSEN = 30
