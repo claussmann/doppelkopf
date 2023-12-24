@@ -1,4 +1,6 @@
 from enum import Enum
+from typing import List
+from pydantic import BaseModel, Field
 
 class Card(Enum):
     # Diamonds
@@ -32,3 +34,9 @@ class Card(Enum):
     CK = "CK"
     C10 = "C10"
     CA = "CA"
+
+
+class Player(BaseModel):
+    hand: List[Card] = list()
+    name: str = Field(max_length=20, min_length=3, default="Anonymous")
+    token: str = ""

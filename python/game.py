@@ -1,8 +1,10 @@
 import time
 import random
+import secrets
 
 from threading import Lock
-from datatypes import Card
+from datatypes import Card, Player
+from errors import *
 
 
 
@@ -20,9 +22,32 @@ class Game:
             Card.C9, Card.C9, Card.CJ, Card.CJ, Card.CD, Card.CD,
             Card.CK, Card.CK, Card.C10, Card.C10, Card.CA, Card.CA
         ]
+        random.shuffle(self.card_deck)
         self.is_active_round = False
+        self.players = dict()
     
     def shuffle(self):
         with self.mutex:
             random.shuffle(self.card_deck)
     
+    def new_player(self, name:str):
+        with self.mutex:
+            if len(self.players) >= 4:
+                raise PlayerLimitException()
+
+            if len(name) > 20 or len(name) < 3:
+                raise NameException()
+
+            for existing_player in self.players.values():
+                if existing_player.name == name:
+                    raise NameException()
+
+            token = secrets.token_hex(16)
+            p = Player()
+            self.players[token] = p
+            p.token = token
+            p.name = name
+            num_players = len(self.players)
+            p.hand = self.card_deck[12*(num_players-1) : 12*num_players]
+        return p
+        
