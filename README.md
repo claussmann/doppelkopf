@@ -15,3 +15,6 @@ Install the dependencies:
 
 Start the app:
 `cd python; uvicorn main:doppelkopf_app`
+
+Swagger UI will be available at
+`http://127.0.0.1:8000/docs#/`
