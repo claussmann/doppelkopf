@@ -5,16 +5,16 @@ class NameException(Exception):
     pass
 
 class PlayerNotExistingException(Exception):
-	pass
+    pass
 
 class PlayerSequenceError(Exception):
-	pass
+    pass
 
 class CardInvalidError(Exception):
-	pass
+    pass
 
 class GameNotReadyException(Exception):
-	pass
+    pass
 
 class VorbehaltInvalidError(Exception):
-	pass
+    pass

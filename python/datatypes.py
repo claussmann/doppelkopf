@@ -4,9 +4,9 @@ from pydantic import BaseModel, Field
 
 
 class State(Enum):
-	WAIT_PLAYER_LOGIN = "WAIT_PLAYER_LOGIN"
-	WAIT_VORBEHALT = "WAIT_VORBEHALT"
-	PLAYING = "PLAYING"
+    WAIT_PLAYER_LOGIN = "WAIT_PLAYER_LOGIN"
+    WAIT_VORBEHALT = "WAIT_VORBEHALT"
+    PLAYING = "PLAYING"
 
 class Card(Enum):
     # Diamonds
@@ -43,32 +43,32 @@ class Card(Enum):
 
 
 class Vorbehalt(Enum):
-	# < 10 are games which keep 2 teams
-	NOTYET = 0
-	GESUND = 1
-	# HOCHZEIT = 2 # TODO: Implement in future version
-	# ARMUT = 3 # TODO: Implement in future version
+    # < 10 are games which keep 2 teams
+    NOTYET = 0
+    GESUND = 1
+    # HOCHZEIT = 2 # TODO: Implement in future version
+    # ARMUT = 3 # TODO: Implement in future version
 
-	# >= 10 are solos
-	SOLO = 10
-	FLEISCHLOSER = 11
-	BUBENSOLO = 12
-	DAMENSOLO = 13
-	
+    # >= 10 are solos
+    SOLO = 10
+    FLEISCHLOSER = 11
+    BUBENSOLO = 12
+    DAMENSOLO = 13
+
 class Team(Enum):
-	RE = "Re"
-	CONTRA = "Contra"
-	NONE = "None"
+    RE = "Re"
+    CONTRA = "Contra"
+    NONE = "None"
 
 class PlayerPub(BaseModel):
     name: str = Field(max_length=20, min_length=3, default="Anonymous")
-	solo_played: bool = False
-	vorbehalt: Vorbehalt = Field(default=Vorbehalt.NOTYET)
-	sequence_index = 0
-	sieg_punkte = 0
+    solo_played: bool = False
+    vorbehalt: Vorbehalt = Field(default=Vorbehalt.NOTYET)
+    sequence_index: int = 0
+    sieg_punkte: int = 0
 
 class PlayerPrivate(PlayerPub):
     hand: List[Card] = list()
     token: str = ""
-	runden_punkte = 0
-	team = Team.NONE
+    runden_punkte: int = 0
+    team: Team = Team.NONE
