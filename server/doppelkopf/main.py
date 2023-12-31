@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException
-from game import Game
-from errors import *
-from datatypes import *
-from table import *
+
+from doppelkopf.game import Game
+from doppelkopf.errors import *
+from doppelkopf.datatypes import *
+from doppelkopf.table import *
 
 doppelkopf_app = FastAPI()
 

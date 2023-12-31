@@ -1,11 +1,11 @@
 import time
 import random
 import secrets
-
 from threading import Lock
-from datatypes import *
-from table import *
-from errors import *
+
+from doppelkopf.datatypes import *
+from doppelkopf.table import *
+from doppelkopf.errors import *
 
 
 

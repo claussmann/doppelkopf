@@ -1,4 +1,4 @@
-from datatypes import *
+from doppelkopf.datatypes import *
 from pydantic import BaseModel, Field
 
 class Table(BaseModel):
