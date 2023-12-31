@@ -75,7 +75,7 @@ class Game:
             if not card in p.hand:
                 raise CardInvalidError()
             self.table.lay_card(p, card)
-            player.hand.remove(card)
+            p.hand.remove(card)
             if self.table.stich_finished():
                 self.stich_count += 1
                 winner = self._get_player_by_index(self.table.get_winner_index())
@@ -100,20 +100,21 @@ class Game:
             if self.state != State.WAIT_VORBEHALT:
                 raise VorbehaltInvalidException()
             player.vorbehalt = vorbehalt
-            if len(p for p in self.players.values if p.vorbehalt != Vorbehalt.NOTYET) >= 4:
+            if len([p for p in self.players.values() if p.vorbehalt != Vorbehalt.NOTYET]) >= 4:
                 highest_vorbehalt = Vorbehalt.NOTYET
                 vorbehalt_von = None
+                solos = [Vorbehalt.GESUND, Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER, Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
                 for i in range(4):
                     index = (self.aufspiel_index + i) % 4
                     p = self._get_player_by_index(index)
-                    if p.vorbehalt >= 10 and not p.solo_played:
+                    if p.vorbehalt in solos and not p.solo_played:
                         highest_vorbehalt = p.vorbehalt
                         vorbehalt_von = p
                         break # Pflichtsolo
-                    elif p.vorbehalt > highest_vorbehalt:
+                    elif solos.index(p.vorbehalt) > solos.index(highest_vorbehalt):
                         highest_vorbehalt = p.vorbehalt
                         vorbehalt_von = p
-                self.table.__initialize(vorbehalt_von.sequence_index, highest_vorbehalt)
+                self.table._initialize(vorbehalt_von.sequence_index, highest_vorbehalt)
                 # TODO: set teams
                 self.state = State.PLAYING
 
@@ -170,7 +171,7 @@ class Game:
 
 
     def _get_player_by_index(self, index:int) -> PlayerPrivate:
-        for p in self.players:
+        for p in self.players.values():
             if p.sequence_index == index:
                 return p
         raise PlayerNotExistingException()

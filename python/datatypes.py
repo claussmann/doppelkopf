@@ -43,17 +43,15 @@ class Card(Enum):
 
 
 class Vorbehalt(Enum):
-    # < 10 are games which keep 2 teams
-    NOTYET = 0
-    GESUND = 1
-    # HOCHZEIT = 2 # TODO: Implement in future version
-    # ARMUT = 3 # TODO: Implement in future version
+    NOTYET = "NOT_YET"
+    GESUND = "GESUND"
+    # HOCHZEIT # TODO: Implement in future version
+    # ARMUT # TODO: Implement in future version
 
-    # >= 10 are solos
-    SOLO = 10
-    FLEISCHLOSER = 11
-    BUBENSOLO = 12
-    DAMENSOLO = 13
+    SOLO = "SOLO"
+    FLEISCHLOSER = "FLEISCHLOSER"
+    BUBENSOLO = "BUBENSOLO"
+    DAMENSOLO = "DAMENSOLO"
 
 class Team(Enum):
     RE = "Re"

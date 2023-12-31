@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from game import Game
 from errors import *
 from datatypes import *
+from table import *
 
 doppelkopf_app = FastAPI()
 
@@ -9,21 +10,36 @@ doppelkopf_app.game = Game()
 
 
 @doppelkopf_app.get("/")
-def greeting():
-    return {"message": "Welcome to Doppelkopf!"}
+def status() -> State:
+    return doppelkopf_app.game.state
 
-@doppelkopf_app.post("/new_player")
+@doppelkopf_app.post("/player/new")
 def join_new_player(name:str) -> PlayerPrivate:
-    try:
-        return doppelkopf_app.game.new_player(name)
-    except PlayerLimitException:
-        raise HTTPException(status_code=400, detail="There are already 4 players in the game.")
-    except NameException:
-        raise HTTPException(status_code=400, detail="The name is invalid. Names must be unique and between 3 and 20 chars.")
+    return doppelkopf_app.game.new_player(name)
 
-@doppelkopf_app.post("/get_player")
+@doppelkopf_app.get("/player/private")
 def get_player(token:str) -> PlayerPrivate:
-    try:
-        return doppelkopf_app.game.get_player(token)
-    except PlayerNotExistingException:
-        raise HTTPException(status_code=400, detail="The player doesn't exist.")
+    return doppelkopf_app.game.get_player(token)
+
+@doppelkopf_app.get("/player/pub")
+def get_pub_player(table_position:int) -> PlayerPub:
+    return doppelkopf_app.game.get_pub_player(table_position)
+
+@doppelkopf_app.get("/table")
+def get_table() -> Table:
+    return doppelkopf_app.game.get_table()
+
+@doppelkopf_app.post("/table/lay_card")
+def lay_card(token:str, card:Card):
+    doppelkopf_app.game.lay_card(token, card)
+    return {"status": "ok"}
+
+@doppelkopf_app.post("/table/schmeissen")
+def schmeissen(token:str) :
+    doppelkopf_app.game.schmeissen(token)
+    return {"status": "ok"}
+
+@doppelkopf_app.post("/table/vorbehalt")
+def say_vorbehalt(token:str, vorbehalt:Vorbehalt) :
+    doppelkopf_app.game.vorbehalt(token, vorbehalt)
+    return {"status": "ok"}
