@@ -41,6 +41,35 @@ class Card(Enum):
     C10 = "C10"
     CA = "CA"
 
+    def is_diamond(self):
+        dia = [Card.D9, Card.DK, Card.DJ, Card.DD, Card.D10, Card.DA]
+        return self in dia
+
+    def is_heart(self):
+        hearts = [Card.H9, Card.HK, Card.HJ, Card.HD, Card.H10, Card.HA]
+        return self in hearts
+
+    def is_spades(self):
+        spades = [Card.S9, Card.SK, Card.SJ, Card.SD, Card.S10, Card.SA]
+        return self in spades
+
+    def is_cross(self):
+        cross = [Card.C9, Card.CK, Card.CJ, Card.CD, Card.C10, Card.CA]
+        return self in cross
+
+    def counting_value(self):
+        if self in [Card.DJ, Card.HJ, Card.CJ, Card.SJ]:
+            return 2
+        if self in [Card.DD, Card.HD, Card.CD, Card.SD]:
+            return 3
+        if self in [Card.DK, Card.HK, Card.CK, Card.SK]:
+            return 4
+        if self in [Card.D10, Card.H10, Card.C10, Card.S10]:
+            return 10
+        if self in [Card.DA, Card.HA, Card.CA, Card.SA]:
+            return 11
+        return 0
+
 
 class Vorbehalt(Enum):
     NOTYET = "NOT_YET"

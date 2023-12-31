@@ -23,18 +23,7 @@ class Table(BaseModel):
         self.player_index = (self.player_index + 1) % 4
 
     def evaluate(self):
-        points = 0
-        for card in self.cards_layed.values():
-            if card in [Card.DJ, Card.HJ, Card.CJ, Card.SJ]:
-                points += 2
-            if card in [Card.DD, Card.HD, Card.CD, Card.SD]:
-                points += 3
-            if card in [Card.DK, Card.HK, Card.CK, Card.SK]:
-                points += 4
-            if card in [Card.D10, Card.H10, Card.C10, Card.S10]:
-                points += 10
-            if card in [Card.DA, Card.HA, Card.CA, Card.SA]:
-                points += 11
+        points = sum(c.counting_value() for c in self.cards_layed.values())
         winner = 0 # TODO
         return (winner, points)
 
