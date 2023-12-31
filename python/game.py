@@ -4,11 +4,139 @@ import secrets
 
 from threading import Lock
 from datatypes import *
+from table import *
 from errors import *
 
 
 
 class Game:
+	
+	def get_player(self, token:str) -> PlayerPrivate:
+		"""
+		Return the player by the given token.
+		"""
+		if token in self.players:
+			return self.players[token]
+		raise PlayerNotExistingException()
+	
+	def get_pub_player(self, index) -> PlayerPub:
+		"""
+		Return the public representation of the player at index.
+		"""
+		return self.__get_player_by_index(index)
+	
+	def get_table(self) -> Table:
+		"""
+		Return the cards layed along other information.
+		"""
+		return self.table
+	
+	def new_player(self, name:str) -> PlayerPrivate:
+		"""
+		Add a new player to the game (as long as no more than
+		4 players are in the game then). Sets the game to state
+		WAIT_VORBEHALT if 4 players are reached.
+		
+		ONLY CALLABLE DURING STATE WAIT_PLAYER_LOGIN
+		"""
+        with self.mutex:
+            if self.state != State.WAIT_PLAYER_LOGIN:
+                raise PlayerLimitException()
+            if len(name) > 20 or len(name) < 3:
+                raise NameException()
+            for existing_player in self.players.values():
+                if existing_player.name == name:
+                    raise NameException()
+            token = secrets.token_hex(16)
+            p = PlayerPrivate()
+            self.players[token] = p
+            p.token = token
+            p.name = name
+            num_players = len(self.players)
+			p.sequence_index = num_players - 1
+            p.hand = self.card_deck[12*(num_players-1) : 12*num_players]
+			if num_players == 4:
+				self.state = State.WAIT_VORBEHALT
+	        return p
+
+	def lay_card(self, token:str, card:Card):
+		"""
+		The player lays the card. This function checks whether this is
+		allowed. If the stich is finished (all four players layed cards)
+		the winner is determined, and points are counted. Game state is
+		set to WAIT_VORBEHALT again for next round.
+		
+		ONLY CALLABLE DURING STATE PLAYING
+		"""
+		with self.mutex:
+			if self.state != State.PLAYING:
+				raise GameNotReadyException()
+			p = self.get_player(token)
+			if not card in p.hand:
+				raise CardInvalidError()
+			self.table.lay_card(p, card)
+			player.hand.remove(card)
+			if self.table.stich_finished():
+				self.stich_count += 1
+				winner = self.__get_player_by_index(self.table.get_winner_index())
+				winner.runden_punkte += self.table.count()
+				self.table.set_next_player(winner.sequence_index)
+			if self.stich_count >= 12:
+				# TODO: Auswertung
+				self.aufspiel_index = (self.aufspiel_index + 1) % 4
+				self.state = State.WAIT_VORBEHALT
+	
+	def vorbehalt(self, token:str, vorbehalt:Vorbehalt):
+		"""
+		Players can state whether they want a normal game (GESUND)
+		or a special game. If all players submitted their "Vorbehalt",
+		this method generates a new Table object and game status
+		is set to PLAYING.
+		
+		ONLY CALLABLE DURING STATE WAIT_VORBEHALT
+		"""
+		player = self.get_player(token)
+		with self.mutex:
+			if self.state != State.WAIT_VORBEHALT:
+				raise VorbehaltInvalidException()
+			player.vorbehalt = vorbehalt
+			if len(p for p in self.players.values if p.vorbehalt != Vorbehalt.NOTYET) >= 4:
+				highest_vorbehalt = Vorbehalt.NOTYET
+				vorbehalt_von = None
+				for i in range(4):
+					index = (self.aufspiel_index + i) % 4
+					p = self.__get_player_by_index(index)
+					if p.vorbehalt >= 10 and not p.solo_played:
+						highest_vorbehalt = p.vorbehalt
+						vorbehalt_von = p
+						break # Pflichtsolo
+					elif p.vorbehalt > highest_vorbehalt:
+						highest_vorbehalt = p.vorbehalt
+						vorbehalt_von = p
+				self.table = Table(vorbehalt_von.sequence_index, highest_vorbehalt)
+				# TODO: set teams
+				self.state = State.PLAYING
+	
+	def schmeissen(self, token:str):
+		"""
+		Player can indicate that he wants new cards. If he is
+		eligable, this function gives new cards to everyone and
+		asks the players for new "Vorbehalt".
+		
+		ONLY CALLABLE DURING STATE WAIT_VORBEHALT
+		"""
+		player = self.get_player(token)
+		with self.mutex:
+			if self.state != State.WAIT_VORBEHALT:
+				raise VorbehaltInvalidException()
+			num_of_nines = len([c for c in player.hand if c in [Card.D9, Card.H9, Card.C9, Card.S9]])
+			num_of_tens = len([c for c in player.hand if c in [Card.D10, Card.H10, Card.C10, Card.S10, Card.DA, Card.HA, Card.CA, Card.SA]])
+			num_of_trumpf = len([c for c in player.hand if c in [Card.H10, Card.CD, Card.SD, Card.HD, Card.DD, Card.CJ, Card.SJ, Card.HJ, Card.DJ, Card.DA, Card.D10, Card.DK, Card.D9]])
+			if num_of_nines >= 5 or num_of_tens >= 7 or num_of_trumpf <= 2:
+				self.__give_new()
+			else:
+				raise VorbehaltInvalidException()
+		
 
     def __init__(self):
         self.mutex = Lock()
@@ -23,101 +151,25 @@ class Game:
             Card.CK, Card.CK, Card.C10, Card.C10, Card.CA, Card.CA
         ]
         random.shuffle(self.card_deck)
-        self.is_active_round = False
         self.players = dict()
+		self.table = Table(0, Vorbehalt.NOTYET) # This is only a dummy 
+		self.aufspiel_index = 0
+		self.state = State.WAIT_PLAYER_LOGIN
+		self.game_mode = Vorbehalt.GESUND
+		self.stich_count = 0
+		self.game_count = 0
     
-    def shuffle(self):
+    def __give_new(self):
         with self.mutex:
             random.shuffle(self.card_deck)
-    
-    def new_player(self, name:str) -> Player:
-        with self.mutex:
-            if len(self.players) >= 4:
-                raise PlayerLimitException()
-
-            if len(name) > 20 or len(name) < 3:
-                raise NameException()
-
-            for existing_player in self.players.values():
-                if existing_player.name == name:
-                    raise NameException()
-
-            token = secrets.token_hex(16)
-            p = Player()
-            self.players[token] = p
-            p.token = token
-            p.name = name
-            num_players = len(self.players)
-			p.sequence_index = num_players - 1
-            p.hand = self.card_deck[12*(num_players-1) : 12*num_players]
-        return p
-	
-	def get_player(self, token:str) -> Player:
-		if token in self.players:
-			return self.players[token]
-		raise PlayerNotExistingException()
-        
-
-	def lay_card(self, token:str, card:Card):
-		p = self.get_player(token)
-		this.round.lay_card(p, card)
-
-
-
-class Round():
-	def __init__(self, start_with:int):
-		self.is_active = True
-		self.cards_played = 0
-		self.current_player = start_with
-		self.current_vorbehalt = Vorbehalt.GESUND
-		self.vorbehalt_is_pflichtsolo = False
-		self.table = {i : None for i in range(4)}
-		self.previous_table = None
-		self.points = {i : 0 for i in range(4)}
-	
-	def player_vorbehalt(self, player:Player, vorbehalt:Vorbehalt, is_pflichtsolo:bool):
-		if vorbehalt >= Vorbehalt.SCHMEISSEN:
-			self.current_vorbehalt = vorbehalt
-		elif not self.vorbehalt_is_pflichtsolo:
-			if self.current_vorbehalt < vorbehalt:
-				self.current_vorbehalt = vorbehalt
-	
-	def lay_card(self, player:Player, card:Card):
-		if not player.sequence_index == self.current_player:
-			raise PlayerSequenceError()
-		if not card in player.hand:
-			raise CardInvalidError()
-		if not self.__check_card_valid(card):
-			raise CardInvalidError()
-		player.hand.remove(card)
-		self.table[self.current_player] = card
-		self.current_player = (self.current_player + 1) % 4
-		self.cards_played += 1
-		if self.cards_played >= 48:
-			self.is_active = False
-		if self.cards_played % 4 == 0:
-			self.points[self.__who_wins(self.table)] = self.__value_of(self.table)
-			self.previous_table = table
-			self.table = {i : None for i in range(4)}
+			i = 0
+			for p in self.players.values():
+				p.hand = self.card_deck[12*(i) : 12*(i+1)]
+				i += 1
 		
 	
-	def __check_card_valid(self, card):
-		return True
-	
-	def __who_wins(self, table):
-		return 0
-	
-	def __value_of(self, table):
-		points = 0
-		for card in table.values():
-			if card in [Card.D10, Card.H10, Card.S10, Card.C10]:
-				points += 10
-			elif card in [Card.DJ, Card.HJ, Card.SJ, Card.CJ]:
-				points += 2
-			elif card in [Card.DD, Card.HD, Card.SD, Card.CD]:
-				points += 3
-			elif card in [Card.DK, Card.HK, Card.SK, Card.CK]:
-				points += 4
-			elif card in [Card.DA, Card.HA, Card.SA, Card.CA]:
-				points += 11
-		return points
+	def __get_player_by_index(self, index:int) -> PlayerPrivate:
+		for p in self.players:
+			if p.sequence_index == index:
+				return p
+		raise PlayerNotExistingException()

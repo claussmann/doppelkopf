@@ -12,3 +12,9 @@ class PlayerSequenceError(Exception):
 
 class CardInvalidError(Exception):
 	pass
+
+class GameNotReadyException(Exception):
+	pass
+
+class VorbehaltInvalidError(Exception):
+	pass

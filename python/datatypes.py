@@ -2,6 +2,12 @@ from enum import Enum
 from typing import List
 from pydantic import BaseModel, Field
 
+
+class State(Enum):
+	WAIT_PLAYER_LOGIN = "WAIT_PLAYER_LOGIN"
+	WAIT_VORBEHALT = "WAIT_VORBEHALT"
+	PLAYING = "PLAYING"
+
 class Card(Enum):
     # Diamonds
     D9 = "D9"
@@ -36,27 +42,33 @@ class Card(Enum):
     CA = "CA"
 
 
-class Player(BaseModel):
-    hand: List[Card] = list()
-    name: str = Field(max_length=20, min_length=3, default="Anonymous")
-    token: str = ""
-	solo: bool = False
-	sequence_index = 0
-	runden_punkte = 0
-	sieg_punkte = 0
-
-
 class Vorbehalt(Enum):
 	# < 10 are games which keep 2 teams
-	GESUND = 0
-	HOCHZEIT = 1
-	ARMUT = 2
+	NOTYET = 0
+	GESUND = 1
+	# HOCHZEIT = 2 # TODO: Implement in future version
+	# ARMUT = 3 # TODO: Implement in future version
 
 	# >= 10 are solos
 	SOLO = 10
 	FLEISCHLOSER = 11
 	BUBENSOLO = 12
 	DAMENSOLO = 13
+	
+class Team(Enum):
+	RE = "Re"
+	CONTRA = "Contra"
+	NONE = "None"
 
-	# >= 30 will always pass
-	SCHMEISSEN = 30
+class PlayerPub(BaseModel):
+    name: str = Field(max_length=20, min_length=3, default="Anonymous")
+	solo_played: bool = False
+	vorbehalt: Vorbehalt = Field(default=Vorbehalt.NOTYET)
+	sequence_index = 0
+	sieg_punkte = 0
+
+class PlayerPrivate(PlayerPub):
+    hand: List[Card] = list()
+    token: str = ""
+	runden_punkte = 0
+	team = Team.NONE
