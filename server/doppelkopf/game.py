@@ -128,22 +128,18 @@ class Game:
             if len([p for p in self.players.values() if p.vorbehalt != Vorbehalt.NOTYET]) >= 4:
                 highest_vorbehalt = Vorbehalt.NOTYET
                 vorbehalt_von = None
-                solos = [Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER, Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
                 for i in range(4):
                     index = (self.aufspiel_index + i) % 4
                     p = self._get_player_by_index(index)
                     if highest_vorbehalt == Vorbehalt.NOTYET:
                         highest_vorbehalt = p.vorbehalt
                         vorbehalt_von = p
-                    elif p.vorbehalt in solos:
+                    elif p.vorbehalt.is_solo():
                         if not p.solo_played:
                             highest_vorbehalt = p.vorbehalt
                             vorbehalt_von = p
                             break # Pflichtsolo
-                        elif highest_vorbehalt not in solos:
-                            highest_vorbehalt = p.vorbehalt
-                            vorbehalt_von = p
-                        elif solos.index(p.vorbehalt) > solos.index(highest_vorbehalt):
+                        elif p.vorbehalt.has_priority_over(highest_vorbehalt):
                             highest_vorbehalt = p.vorbehalt
                             vorbehalt_von = p
                 self.table._initialize(vorbehalt_von.sequence_index, highest_vorbehalt)

@@ -53,6 +53,15 @@ class Vorbehalt(Enum):
     BUBENSOLO = "BUBENSOLO"
     DAMENSOLO = "DAMENSOLO"
 
+    def is_solo(self):
+        return self in [Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER, Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
+
+    def has_priority_over(self, other):
+        priority = [Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER, Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
+        if other not in priority:
+            return True
+        return priority.index(self) > priority.index(other)
+
 class Team(Enum):
     RE = "Re"
     CONTRA = "Contra"
