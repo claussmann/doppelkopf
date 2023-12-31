@@ -31,6 +31,30 @@ class Game:
         """
         return self.table
 
+    def get_game_mode(self) -> Vorbehalt:
+        """
+        Return the Vorbehalt which is currently played.
+        """
+        return self.table.game_mode
+
+    def get_state(self) -> State:
+        """
+        Return the state of the game (e.g. WAIT_VORBEHALT)
+        """
+        return self.state
+
+    def whose_turn(self) -> int:
+        """
+        Return the index of the player whose current turn it is.
+        """
+        return self.table.player_index
+
+    def which_round(self) -> int:
+        """
+        Return the index of the current round.
+        """
+        return self.game_count
+
     def new_player(self, name:str) -> PlayerPrivate:
         """
         Add a new player to the game (as long as no more than
@@ -76,10 +100,11 @@ class Game:
                 raise CardInvalidError()
             self.table.lay_card(p, card)
             p.hand.remove(card)
-            if self.table.stich_finished():
+            if self.table.is_stich_finished():
                 self.stich_count += 1
-                winner = self._get_player_by_index(self.table.get_winner_index())
-                winner.runden_punkte += self.table.count()
+                winner, points = self.table.evaluate()
+                winner = self._get_player_by_index(winner)
+                winner.runden_punkte += points
                 self.table.set_next_player(winner.sequence_index)
             if self.stich_count >= 12:
                 # TODO: Auswertung
@@ -103,17 +128,24 @@ class Game:
             if len([p for p in self.players.values() if p.vorbehalt != Vorbehalt.NOTYET]) >= 4:
                 highest_vorbehalt = Vorbehalt.NOTYET
                 vorbehalt_von = None
-                solos = [Vorbehalt.GESUND, Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER, Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
+                solos = [Vorbehalt.SOLO, Vorbehalt.FLEISCHLOSER, Vorbehalt.BUBENSOLO, Vorbehalt.DAMENSOLO]
                 for i in range(4):
                     index = (self.aufspiel_index + i) % 4
                     p = self._get_player_by_index(index)
-                    if p.vorbehalt in solos and not p.solo_played:
+                    if highest_vorbehalt == Vorbehalt.NOTYET:
                         highest_vorbehalt = p.vorbehalt
                         vorbehalt_von = p
-                        break # Pflichtsolo
-                    elif solos.index(p.vorbehalt) > solos.index(highest_vorbehalt):
-                        highest_vorbehalt = p.vorbehalt
-                        vorbehalt_von = p
+                    elif p.vorbehalt in solos:
+                        if not p.solo_played:
+                            highest_vorbehalt = p.vorbehalt
+                            vorbehalt_von = p
+                            break # Pflichtsolo
+                        elif highest_vorbehalt not in solos:
+                            highest_vorbehalt = p.vorbehalt
+                            vorbehalt_von = p
+                        elif solos.index(p.vorbehalt) > solos.index(highest_vorbehalt):
+                            highest_vorbehalt = p.vorbehalt
+                            vorbehalt_von = p
                 self.table._initialize(vorbehalt_von.sequence_index, highest_vorbehalt)
                 # TODO: set teams
                 self.state = State.PLAYING

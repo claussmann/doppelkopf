@@ -1,4 +1,5 @@
 from doppelkopf.datatypes import *
+from doppelkopf.errors import *
 from pydantic import BaseModel, Field
 
 class Table(BaseModel):
@@ -21,23 +22,21 @@ class Table(BaseModel):
         self.cards_layed[self.player_index] = card
         self.player_index = (self.player_index + 1) % 4
 
-    def winner(self):
-        return 0 # TODO
-
-    def count(self):
-        ret = 0
+    def evaluate(self):
+        points = 0
         for card in self.cards_layed.values():
             if card in [Card.DJ, Card.HJ, Card.CJ, Card.SJ]:
-                ret += 2
+                points += 2
             if card in [Card.DD, Card.HD, Card.CD, Card.SD]:
-                ret += 3
+                points += 3
             if card in [Card.DK, Card.HK, Card.CK, Card.SK]:
-                ret += 4
+                points += 4
             if card in [Card.D10, Card.H10, Card.C10, Card.S10]:
-                ret += 10
+                points += 10
             if card in [Card.DA, Card.HA, Card.CA, Card.SA]:
-                ret += 11
-        return ret
+                points += 11
+        winner = 0 # TODO
+        return (winner, points)
 
     def set_next_player(self, index):
         self.player_index = index
